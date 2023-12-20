@@ -12,7 +12,7 @@ def sharpenImage(im):  # Need to check if sharpening input images would help acc
     return im
 
 
-img = cv2.imread("DATA/ocrTestImage.jpeg", 0)
+img = cv2.imread("DATA/textbookImg.jpeg", 0)
 img = sharpenImage(img)
 
 
@@ -23,7 +23,7 @@ def alignImg(im):
     if angle < -45:
         angle = -(angle + 90)
     else:
-        angle = -angle + 90
+        angle = -angle
     h, w = im.shape  # height and width of img
     center = (w // 2, h // 2)
     rotMatrix = cv2.getRotationMatrix2D(center, angle, 1)
@@ -45,7 +45,7 @@ for i in range(len(pixelSum)):
         rows.append(seg)
         seg = []
 
-    if len(seg) > 40:
+    if len(seg) > 50:
         rows.append(seg)
         seg = []
 
