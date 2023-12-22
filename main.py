@@ -1,18 +1,19 @@
-import pandas as pd
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
+import string
 
 
 def sharpenImage(im):  # Need to check if sharpening input images would help accuracy
     kernel = np.ones((3, 3), np.float32) / 90
     im = cv2.filter2D(im, -1, kernel)  # -1 means depth of image remains unchanged
-    im = cv2.adaptiveThreshold(im, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    im = cv2.adaptiveThreshold(im, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 1)
     im = 255 - im
+    cv2.imwrite("DATA/sharpend.jpeg",im)
     return im
 
 
-img = cv2.imread("DATA/textbookImg.jpeg", 0)
+img = cv2.imread("DATA/word1.jpeg", 0)
 img = sharpenImage(img)
 
 
@@ -51,5 +52,3 @@ for i in range(len(pixelSum)):
 
 print("NO OF LINES", len(rows))
 
-plt.imshow(img[rows[5][0]:rows[5][-1],:])
-plt.show()
