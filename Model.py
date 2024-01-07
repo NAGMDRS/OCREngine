@@ -22,6 +22,14 @@ def encodeText(txt):
 size = (32, 128)
 
 
+def sharpenImage(im):  # Need to check if sharpening input images would help accuracy
+    kernel = np.ones((3, 3), np.float32) / 90
+    im = cv2.filter2D(im, -1, kernel)  # -1 means depth of image remains unchanged
+    im = cv2.adaptiveThreshold(im, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 1)
+    im = 255 - im
+    return im
+
+
 def reshapeForNN(img, size):
     (H, W) = size
     (h, w) = img.shape

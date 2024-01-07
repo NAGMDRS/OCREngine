@@ -3,9 +3,10 @@ from random import random
 import cv2
 import numpy as np
 from keras.src.utils import pad_sequences
-from keras.layers import Dense, LSTM, Reshape, BatchNormalization, Input, Conv2D, MaxPool2D, Lambda, Bidirectional
+from keras.layers import Dense, LSTM,  BatchNormalization, Input, Conv2D, MaxPool2D, Lambda, Bidirectional
 from keras.models import Model
 import keras.backend as K
+from keras.callbacks import ModelCheckpoint
 
 recognizableChar = string.digits + string.ascii_letters + string.punctuation
 size = (32, 128)
@@ -145,4 +146,43 @@ outputs = Dense(len(recognizableChar) + 1, activation='softmax')(blstm_2)
 # model to be used at test time
 act_model = Model(inputs, outputs)
 
+labels = Input(name='the_labels', shape=[max_label_len], dtype='float32')
+input_length = Input(name='input_length', shape=[1], dtype='int64')
+label_length = Input(name='label_length', shape=[1], dtype='int64')
 
+
+def ctc_lambda_func(args):
+    # Defining the CTC loss.
+    y_pred, labels, input_length, label_length = args
+
+    return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
+
+
+# CTC layer declaration using lambda.
+loss_out = Lambda(ctc_lambda_func, output_shape=(1,), name='ctc')([outputs, labels, input_length, label_length])
+
+# Including the CTC layer to train the model.
+model = Model(inputs=[inputs, labels, input_length, label_length], outputs=loss_out)
+
+model.compile(loss={'ctc': lambda y_true, y_pred: y_pred}, optimizer='adam')
+
+filepath = "model/best_model.hdf5"
+checkpoint = ModelCheckpoint(filepath=filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='auto')
+callbacks_list = [checkpoint]
+
+training_img = np.array(training_img)
+train_input_length = np.array(train_input_length)
+train_label_length = np.array(train_label_length)
+
+valid_img = np.array(valid_img)
+valid_input_length = np.array(valid_input_length)
+valid_label_length = np.array(valid_label_length)
+
+
+batch_size = 256
+epochs = 15
+model.fit(x=[training_img, train_padded_txt, train_input_length, train_label_length],
+          y=np.zeros(len(training_img)),
+          batch_size=batch_size, epochs = epochs,
+          validation_data = ([valid_img, valid_padded_txt, valid_input_length, valid_label_length],
+          [np.zeros(len(valid_img))]), verbose = 1, callbacks = callbacks_list)
