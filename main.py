@@ -12,8 +12,6 @@ def sharpenImage(im):  # Need to check if sharpening input images would help acc
     cv2.imwrite("DATA/sharpend.jpeg",im)
     return im
 
-
-img = cv2.imread("DATA/word1.jpeg", 0)
 img = sharpenImage(img)
 
 
@@ -27,7 +25,7 @@ def alignImg(im):
         angle = -angle
     h, w = im.shape  # height and width of img
     center = (w // 2, h // 2)
-    rotMatrix = cv2.getRotationMatrix2D(center, angle, 1)
+    rotMatrix = cv2.getRotationMatrix2D(center, angle, 1) #rotates the min area rectangle
     rotated = cv2.warpAffine(img, rotMatrix, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
     return rotated
 
@@ -38,6 +36,7 @@ pixelSum = np.sum(img == 255, axis=1)
 rows = []
 seg = []
 
+#ml model can be trained with annotated data for extracting text from various situations
 for i in range(len(pixelSum)):
     if pixelSum[i] > 20:
         seg.append(i)
@@ -50,5 +49,5 @@ for i in range(len(pixelSum)):
         rows.append(seg)
         seg = []
 
-print("NO OF LINES", len(rows))
+print("NO OF LINES", len(rows)) #rows contains pixel coordinates of all lines
 

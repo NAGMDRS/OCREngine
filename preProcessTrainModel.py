@@ -8,7 +8,7 @@ from keras.models import Model
 import keras.backend as K
 from keras.callbacks import ModelCheckpoint
 
-recognizableChar = string.digits + string.ascii_letters + string.punctuation
+recognizableChar = string.digits + string.ascii_letters + string.punctuation #all recognizable char for data encoding
 size = (32, 128)
 
 
@@ -41,7 +41,7 @@ def reshapeForNN(img, size):
     npImg = np.asarray(img)
     for j in range(0, int(w * R) - 1):
         for i in range(0, int(h * R) - 1):
-            canvas[i][j] = max(canvas[i][j], npImg[i][j])
+            canvas[i][j] = max(canvas[i][j], npImg[i][j])  #padding the image to the size of input layer of nn
     cv2.imwrite("DATA/Test.jpeg", canvas)
     return canvas
 
@@ -67,7 +67,7 @@ imagenames = []
 txts = []
 
 for cnt in annot:
-    filename, txt = cnt.split(',')[0], cnt.split(',')[1].split('\n')[0]
+    filename, txt = cnt.split(',')[0], cnt.split(',')[1].split('\n')[0] #saving filenames and text
     imagenames.append(filename)
     txts.append(txt)
 
@@ -86,11 +86,11 @@ for i in range(len(imagenames)):
     img = img / 255.
     txt = txts[i]
 
-    # compute maximum length of the text
+    #maximum length of the text
     if len(txt) > max_label_len:
         max_label_len = len(txt)
 
-    # split the 150000 data into validation and training dataset as 10% and 90% respectively
+    # splitting the data into validation and training dataset as 10% and 90% respectively
     if i % 10 == 0:
         valid_orig_txt.append(txt)
         valid_label_length.append(len(txt))
@@ -104,7 +104,7 @@ for i in range(len(imagenames)):
         training_img.append(img)
         training_txt.append(encodeText(txt))
 
-# wordNow --> wordNow00000
+# wordNow --> wordNow00000 post padding ans with len of arr till max length of the dataset
 train_padded_txt = pad_sequences(training_txt, maxlen=max_label_len, padding='post', value=len(recognizableChar))
 valid_padded_txt = pad_sequences(valid_txt, maxlen=max_label_len, padding='post', value=len(recognizableChar))
 
@@ -122,7 +122,7 @@ pool_2 = MaxPool2D(pool_size=(2, 2), strides=2)(conv_2)
 conv_3 = Conv2D(256, (3, 3), activation='relu', padding='same')(pool_2)
 
 conv_4 = Conv2D(256, (3, 3), activation='relu', padding='same')(conv_3)
-# poolig layer with kernel size (2,1)
+# pooling layer with kernel size (2,1) maxpooling
 pool_4 = MaxPool2D(pool_size=(2, 1))(conv_4)
 
 conv_5 = Conv2D(512, (3, 3), activation='relu', padding='same')(pool_4)
@@ -138,6 +138,7 @@ conv_7 = Conv2D(512, (2, 2), activation='relu')(pool_6)
 squeezed = Lambda(lambda x: K.squeeze(x, 1))(conv_7)
 
 # bidirectional LSTM layers with units=128
+#lstm makes this nn differ from basic charector recognition
 blstm_1 = Bidirectional(LSTM(128, return_sequences=True, dropout=0.2))(squeezed)
 blstm_2 = Bidirectional(LSTM(128, return_sequences=True, dropout=0.2))(blstm_1)
 
@@ -152,13 +153,12 @@ label_length = Input(name='label_length', shape=[1], dtype='int64')
 
 
 def ctc_lambda_func(args):
-    # Defining the CTC loss.
+    # Defining the CTC loss for getting string handle repeated detection
     y_pred, labels, input_length, label_length = args
 
     return K.ctc_batch_cost(labels, y_pred, input_length, label_length)
 
 
-# CTC layer declaration using lambda.
 loss_out = Lambda(ctc_lambda_func, output_shape=(1,), name='ctc')([outputs, labels, input_length, label_length])
 
 # Including the CTC layer to train the model.
